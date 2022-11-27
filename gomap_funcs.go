@@ -59,7 +59,12 @@ func getLocalRanges() []string {
 			if ipnet.IP.To4() != nil {
 				split := strings.Split(ipnet.IP.String(), ".")
 				mask, _ := ipnet.Mask.Size()
-				allAddresses = append(allAddresses, fmt.Sprintf("%s.%s.%s.0/%d", split[0], split[1], split[2], mask))
+				// If a CIDR mask is smaller than 24, don't use a range to 0
+				if mask <= 24 {
+					allAddresses = append(allAddresses, fmt.Sprintf("%s.%s.%s.0/%d", split[0], split[1], split[2], mask))
+				} else {
+					allAddresses = append(allAddresses, address.String())
+				}
 			}
 		}
 	}
