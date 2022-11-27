@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/JustinTimperio/gomap"
+	"github.com/Wundark/gomap"
 )
 
 func TestMain(m *testing.M) {

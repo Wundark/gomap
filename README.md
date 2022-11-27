@@ -88,7 +88,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/JustinTimperio/gomap"
+	"github.com/Wundark/gomap"
 )
 
 func main() {
