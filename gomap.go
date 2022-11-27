@@ -70,17 +70,7 @@ func ScanIP(hostname string, proto string, fastscan bool, stealth bool) (*IPScan
 
 // ScanRange scans every address on a CIDR for open ports
 func ScanRange(proto string, fastscan bool, stealth bool) (RangeScanResult, error) {
-	laddr, err := getLocalIP()
-	if err != nil {
-		return nil, err
-	}
-
-	if stealth {
-		if canSocketBind(laddr) == false {
-			return nil, fmt.Errorf("socket: operation not permitted")
-		}
-	}
-	return scanIPRange(laddr, proto, fastscan, stealth)
+	return scanIPRanges(proto, fastscan, stealth)
 }
 
 // String with the results of a single scanned IP

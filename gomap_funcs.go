@@ -45,25 +45,31 @@ func createHostRange(netw string) []string {
 	return hosts
 }
 
-// getLocalRange returns local ip range or defaults on error to most common
-func getLocalRange() string {
+// getLocalRanges returns local ip range or defaults on error to most common
+func getLocalRanges() []string {
+	defaultReturn := []string{"192.168.1.0/24"}
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "192.168.1.0/24"
+		return defaultReturn
 	}
+	var allAddresses []string
 	for _, address := range addrs {
 		// check the address type and if it is not a loopback the display it
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
 				split := strings.Split(ipnet.IP.String(), ".")
-				return split[0] + "." + split[1] + "." + split[2] + ".0/24"
+				mask, _ := ipnet.Mask.Size()
+				allAddresses = append(allAddresses, fmt.Sprintf("%s.%s.%s.0/%d", split[0], split[1], split[2], mask))
 			}
 		}
 	}
-	return "192.168.1.0/24"
+	if len(allAddresses) == 0 {
+		return defaultReturn
+	}
+	return allAddresses
 }
 
-// getLocalRange returns local ip range or defaults on error to most common
+// getLocalIP returns local ip range or defaults on error to most common
 func getLocalIP() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -78,4 +84,36 @@ func getLocalIP() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("No IP Found")
+}
+
+// getLocalIP returns local ip range or defaults on error to most common
+func getLocalIPsForRanges() (map[string]string, error) {
+	localRanges := getLocalRanges()
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	var localRangesMap map[string]string
+
+	for _, localRange := range localRanges {
+		for _, address := range addrs {
+			// check the address type and if it is not a loopback the display it
+			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					_, ipNetRange, _ := net.ParseCIDR(localRange)
+					if ipNetRange.Contains(ipnet.IP) {
+						localRangesMap[localRange] = ipnet.IP.String()
+					}
+				}
+			}
+		}
+	}
+
+	if len(localRangesMap) == 0 {
+		return nil, fmt.Errorf("No IPs Found")
+	}
+
+	return localRangesMap, nil
 }

@@ -7,20 +7,38 @@ import (
 	"time"
 )
 
-// scanIPRange scans an entire cidr range for open ports
+// scanIPRanges scans an entire cidr range for open ports
 // I am fairly happy with this code since its just iterating
 // over scanIPPorts. Most issues are deeper in the code.
-func scanIPRange(laddr string, proto string, fastscan bool, stealth bool) (RangeScanResult, error) {
-	iprange := getLocalRange()
-	hosts := createHostRange(iprange)
+func scanIPRanges(proto string, fastscan bool, stealth bool) (RangeScanResult, error) {
+	localRangeMap, err := getLocalIPsForRanges()
+	if err != nil {
+		return nil, err
+	}
 
+	ipranges := getLocalRanges()
 	var results RangeScanResult
-	for _, h := range hosts {
-		scan, err := scanIPPorts(h, laddr, proto, fastscan, stealth)
-		if err != nil {
-			continue
+
+	for _, iprange := range ipranges {
+		hosts := createHostRange(iprange)
+		laddr, ok := localRangeMap[iprange]
+		if !ok {
+			return nil, fmt.Errorf("unable to find local address for ip range %s", iprange)
 		}
-		results = append(results, scan)
+
+		if stealth {
+			if canSocketBind(laddr) == false {
+				return nil, fmt.Errorf("socket: operation not permitted")
+			}
+		}
+
+		for _, h := range hosts {
+			scan, err := scanIPPorts(h, laddr, proto, fastscan, stealth)
+			if err != nil {
+				continue
+			}
+			results = append(results, scan)
+		}
 	}
 
 	return results, nil
