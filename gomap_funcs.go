@@ -95,7 +95,7 @@ func getLocalIPsForRanges() (map[string]string, error) {
 		return nil, err
 	}
 
-	var localRangesMap map[string]string
+	localRangesMap := map[string]string{}
 
 	for _, localRange := range localRanges {
 		for _, address := range addrs {
